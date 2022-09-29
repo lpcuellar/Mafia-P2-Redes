@@ -5,7 +5,7 @@ Para leer las instrucciones ir al siguiente link: https://uvgmafiagame.monster/
 
 # Corrida
 
-Descargar el cliente y correlo usando python client.py localhost 8000 donde localhost es la IP deseada y el puerto TCP de su eleccion.
+Descargar el cliente y correlo usando "python client.py localhost 8000" donde localhost es la IP deseada y el puerto TCP de su eleccion.
 
 Posteriormente agregar su nombre de usuario
 
