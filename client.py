@@ -23,7 +23,7 @@ ascii_art = """
 *                                                                                                    *
 ******************************************************************************************************                                                                                            
 """
-instrucciones = " INSTRUCCIONES:"
+instrucciones = " Instrucciones: \n\n Como se Gana? \n\n Mafia debe de intentar matar a todos los civiles, ya sea votando o matandolos en la noches mientras que los civiles deben de descubrir quien es mafia y votarlos durante el dia \n\n Cuales son los Roles? \n\n Normalmente existen muchos roles pero en este caso jugaremos con mafia, civiles y detective. \n\n Que hacer si es mafia? \n\n Los mafia deben de tratar hacerse pasar como civiles durante el dia y eliminar a un jugador por medio de una votacion durante la noche \n\n Que hacer si es detective? \n\n Si se es detective, durante la noche puede investigar a un jugador de su eleccion para descubrir si es civil o mafia. \n\n Que hacer si es civil? \n\n Los civiles deben de intentar descubrir quien es mafia durante el dia para asi votar para eliminarlos \n\n Que pasa si hay un empate en las votaciones? \n\n Si durante cualquiera de los dos procesos de votacion existe un empate no sucede nada"
 menu = """
 
 Available Commands:
@@ -31,7 +31,8 @@ Available Commands:
     /2 -> Approve Join Requests (Admin)
     /3 -> Disconnect
     /4 -> View All Members
-    /5 -> Start GAME    
+    /5 -> Start GAME
+    /vote -> To vote (only allowed during game)    
     
 Type anything else to send a message: """
 
@@ -55,6 +56,7 @@ def serverListen(serverSocket):
                         print(element)
             else:
                 print(response)
+        ##para que el admin pueda aceptar gente en la sala de espera
         elif msg == "/approveRequest":
             serverSocket.send(bytes(".","utf-8"))
             response = serverSocket.recv(1024).decode("utf-8")
@@ -68,6 +70,25 @@ def serverListen(serverSocket):
                 print(serverSocket.recv(1024).decode("utf-8"))
             else:
                 print(response)
+        ##Para hacer votos en contra de usuarios
+        elif msg =="/requestVote":
+            serverSocket.send(bytes(".","utf-8"))
+            response = serverSocket.recv(1024).decode("utf-8")
+
+            print(response)
+            if (response == "/nowVote"):
+                print("El servidor me autoriza votar")
+                state["inputMessage"] = False
+                print("Please enter the username you want to kill: ")
+                with state["inputCondition"]:
+                    state["inputCondition"].wait()
+                state["inputMessage"] = True
+                print("lo que le enviare al server es :" + str(state["userInput"]))
+                serverSocket.send(bytes(state["userInput"],"utf-8"))
+                print(serverSocket.recv(1024).decode("utf-8"))
+            else:
+                print(response)
+
         elif msg == "/disconnect":
             serverSocket.send(bytes(".","utf-8"))
             state["alive"] = False
@@ -98,7 +119,7 @@ def serverListen(serverSocket):
 def userInput(serverSocket):
     while state["alive"]:
         state["sendMessageLock"].acquire()
-        state["userInput"] = input()
+        state["userInput"] = input(">>>")
         state["sendMessageLock"].release()
         with state["inputCondition"]:
             state["inputCondition"].notify()
@@ -114,6 +135,9 @@ def userInput(serverSocket):
         elif state["userInput"] == "/5":
             state["sendMessageLock"].acquire()
             serverSocket.send(b"/startGame")
+        elif state["userInput"] == "/vote":
+            #state["sendMessageLock"].acquire()
+            serverSocket.send(b"/vote")
         elif state["inputMessage"]:
             state["sendMessageLock"].acquire()
             serverSocket.send(b"/messageSend")
@@ -124,7 +148,8 @@ def waitServerListen(serverSocket):
         if msg == "/accepted":
             state["alive"] = True
         
-            print("Your join request has been approved. Press any key to begin chatting.")
+            print("Ud ha sido aceptado a la sala solicitada")
+            serverSocket.send(b".")
         
             break
         
@@ -134,8 +159,8 @@ def waitServerListen(serverSocket):
 
 def waitUserInput(serverSocket):
     while not state["alive"]:
-        state["userInput"] = input()
-        if state["userInput"] == "/1" and not state["alive"]:
+        state["userInput"] = input(">>>")
+        if state["userInput"] == "/3" and not state["alive"]:
             serverSocket.send(b"/waitDisconnect")
             break
 

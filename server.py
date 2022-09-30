@@ -23,6 +23,36 @@ roles = {
     4:"Detective"
 }
 
+narrator_state = """
+¡¡COMENZAMOS CON EL JUEGO!!
+
+NARRADOR: 
+    AHORITA ES DE {0}
+    HAY {1} MAFIOSO(S) --- {2} CIVIL(ES) --- {3} DETECTIVE(S)
+
+"""
+
+mafia_night_message = """
+
+La noche en donde solo los de la MAFIA está empezando.
+Tienen 1 minuto para elegir una víctima.
+
+"""
+
+detective_night_message = """
+
+La noche en donde solo los DETECTIVES está empezando.
+Tienen 1 minuto para elegir un jugador para ver su carta.
+
+"""
+
+discussion_message = """
+
+Empieza el periodo de discusión.
+Tienen 1 minuto para elegir si matan a un jugador o no.
+
+"""
+
 groups = {}
 
 class Group:
@@ -36,7 +66,7 @@ class Group:
         self.allMembers = set()
         self.allMembers.add(admin)
         self.onlineMembers= set()
-        self.deadMembers = {}
+        self.deadMembers = ["cl1"]
 
         self.offlineMessages = {}
 
@@ -57,6 +87,43 @@ class Group:
         self.civilCount =0
         self.detectiveCount=0
         self.timeLeft=90
+        self.votes=[]
+        self.votesAgainst=[]
+        self.start = False
+
+    def send_broadcast(self, message):
+        for member in self.allMembers:
+            self.clients[member].send(bytes(message,"utf-8"))
+
+
+    ##Revisa si ese usuario ya habia votado y si si, lo remplaza.
+    def addVote(self,username,target):
+        newvote= {'user':username,'vote':target}
+        print("tu nuevo voto es :" +str(newvote))
+        test=newvote['user']
+        replacement=False
+        if(len(self.votes)>0):
+            listo =False
+            for vote in self.votes:
+                print(vote)
+                if vote['user']  == newvote['user']:
+                    print("Encontre un voto de "+ test)
+                    self.votes.remove(vote)
+                    self.votes.append(newvote)
+                    replacement=True	        	        
+            if(replacement==False):
+                self.votes.append(newvote)
+
+        else:
+            self.votes.append(newvote)
+        print(self.votes)
+
+    def countVotes(self):
+        pass
+
+
+
+
 
     def countdown(self,t):
         #countdown(int(tiempo en segundos))
@@ -68,27 +135,10 @@ class Group:
         
             time.sleep(1)
             t -= 1
-    def narrator(self):
-        daytimeText = ""
-        if(self.daytime==1):
-            daytimeText= "DIA"
-        elif(self.daytime==2):
-            daytimeText ="NOCHE (Solo Mafiosos pueden hablar)"
-        else:
-            daytimeText ="NOCHE (Solo Detective puede ver)"
-        state= "NARRADOR: AHORITA ES DE "+daytimeText +" \nHAY "+ str(self.mafiaCount) + " MAFIOSOS ," + str(self.civilCount) + " CIVILES , " + self.detectiveCount +" DETECTIVES" 
-        for member in self.allMembers:
-            self.clients[member].send(bytes(state,"utf-8"))
-
-
-    def startGame(self):
-        mafiaLeft= self.mafiaCount
-        civiliansLeft= self.civilianCount
-        detectivesLeft=self.detectiveCount
-        self.daytime=1
-        self.narrator()
-
+   
     def asignRoles(self):
+        print("\nASSIGNING ROLES FOR THE PLAYERS")
+
         mafiaCount= self.mafiaCount
         civilianCount= self.civilCount
         detectiveCount=self.detectiveCount        
@@ -139,7 +189,7 @@ class Group:
             detectiveCount=math.ceil(playersCount/6)
             civilianCount=playersCount-detectiveCount-mafiaCount
         
-        print("THE DISTRIBUTION OF ROLES IS:")
+        print("\nTHE DISTRIBUTION OF ROLES IS:")
         print(" MAFIA :" + str(mafiaCount))
         print(" DETECTIVE :" + str(detectiveCount))
         print(" CIVILS :" + str(civilianCount))
@@ -148,10 +198,10 @@ class Group:
         for member in self.allMembers:
             pendingPlayers.append(member)
         
-        print("ASSIGNING MAFIA ")
+        print("\nASSIGNING MAFIA ")
         
         for j in range(0, mafiaCount):
-            print("THE FOLLOWING IS GETTING ASSIGNED")
+            print("THE FOLLOWING PLAYERS ARE MAFIA:")
             
             nextPlayer =random.randint(0,len(pendingPlayers)-1)
             
@@ -160,10 +210,10 @@ class Group:
             self.rolesJugadores.append({"user":pendingPlayers[nextPlayer],"role":"MAFIA"})
             pendingPlayers.remove(pendingPlayers[nextPlayer])
         
-        print("ASIGNANDO DETECTIVES")
+        print("\nASSIGNING DETECTIVES")
         
         for j in range(0,detectiveCount):
-            print("THE FOLLOWING IS GETTING ASSIGNED")
+            print("THE FOLLOWING PLAYERS ARE DETECTIVES:")
             
             nextPlayer =random.randint(0,len(pendingPlayers)-1)
             
@@ -174,10 +224,10 @@ class Group:
             
             print(pendingPlayers)
         
-        print("ASIGNANDO CIVILES")
+        print("\nASSIGNING CIVILS")
         
         for j in range(0,civilianCount):
-            print("THE FOLLOWING IS GETTING ASSIGNED")
+            print("THE FOLLOWING PLAYERS ARE CIVILS:")
         
             nextPlayer =random.randint(0,len(pendingPlayers)-1)
         
@@ -186,10 +236,7 @@ class Group:
             self.rolesJugadores.append({"user":pendingPlayers[nextPlayer],"role":"CIVIL"})
             pendingPlayers.remove(pendingPlayers[nextPlayer])
         
-        print(self.rolesJugadores)
-
-        print("SENDING MESSAGE")
-        print(self.clients)
+        print("\nTHE ROLES ASSIGNED ARE THE FOLLOWING:")
 
         for member in self.allMembers:
             for i in self.rolesJugadores:
@@ -206,15 +253,87 @@ class Group:
                         print("not found")
                 
                 if usr == member:
-                    print("Le enviare un mensaje a "+str(usr)+ " diciendole que su rol es : " + str(rol))
-                    self.clients[usr].send(bytes("Tu rol asignado es : " + str(rol),"utf-8"))
+                    print("El usuario: "+ str(usr) + " tiene el role : " + str(rol))
+                    self.clients[member].send(bytes("Tu rol asignado es : {0}".format(str(rol)),"utf-8"))
 
-            # myrole = 
-            # self.clients[member].send(bytes( "TU ROL ES : " + myrole,"utf-8"))
-        self.civilianCount= civilianCount
+        self.civilCount= civilianCount
         self.mafiaCount= mafiaCount
         self.detectiveCount=detectiveCount
-        self.startGame()
+
+    def moment(self, daytime):
+        if daytime == 0 and self.isFirstDay == False:
+            print("\nTHE DISUSSION PERIOD IS STARTING")
+        
+            self.send_broadcast(discussion_message)
+
+        elif daytime == 1:
+            print("\nTHE NIGHT WERE ONLY THE MAFIA IS ACTIVE IS STARTING")
+        
+            send_broadcast(mafia_night_message)
+
+        elif daytime == 2:
+            print("\nTHE NIGHT WERE ONLY THE DETECTIVES ARE ACTIVE IS STARTING")
+        
+            self.send_broadcast(detective_night_message)
+        
+        else:
+            print("Unknown moment :( ")
+
+    def narrator(self):
+        print("\nNARRATOR FASE STARTING")
+
+        daytimeText = ""
+        state = ""
+        
+        if ((self.daytime % 3) == 0):
+            daytimeText= "DIA"
+            state = narrator_state.format(str(daytimeText), str(self.mafiaCount), str(self.civilCount), str(self.detectiveCount))
+
+            print(state)
+            
+            if self.isFirstDay:
+                self.send_broadcast(state)
+
+            else:
+                self.send_broadcast(state)
+
+                self.isFirstDay = False
+                self.moment(self.daytime)
+
+
+        elif ((self.daytime % 3) == 1):
+            daytimeText ="NOCHE (Solo Mafiosos pueden hablar)"
+            state = narrator_state.format(str(daytimeText), str(self.mafiaCount), str(self.civilCount), str(self.detectiveCount))
+
+            print(state)
+
+            self.send_broadcast(state)
+            self.moment(self.daytime)
+        
+        elif ((self.daytime % 3) == 2):
+            daytimeText ="NOCHE (Solo Detective puede ver)"
+            state = narrator_state.format(str(daytimeText), str(self.mafiaCount), str(self.civilCount), str(self.detectiveCount))
+
+            print(state)
+
+            self.send_broadcast(state)
+            self.moment(self.daytime)
+
+        else:
+            print("UNKNOWN DAY STATE")
+
+    def startGame(self):
+        print("\nCLIENT REQUESTED TO START THE GAME")
+        self.start=True
+        self.asignRoles()
+
+        mafiaLeft = self.mafiaCount
+        civiliansLeft = self.civilCount
+        detectivesLeft = self.detectiveCount
+        
+        self.isFirstDay = True
+        self.daytime = 0
+        self.narrator()
 
     def disconnect(self,username):
         self.onlineMembers.remove(username)
@@ -224,15 +343,19 @@ class Group:
         self.onlineMembers.add(username)
         self.clients[username] = client
         
-        print("NEW USER CONENCTED")
+        print("\n***NEW USER CONENCTED***\n")
         
         for member in self.onlineMembers:
             print(str(member))
             
     def sendMessage(self,message,username):
-        for member in self.allMembers:
-            if member != username:
-                self.clients[member].send(bytes(username + ": " + message,"utf-8"))
+        #para que los juagadore muertos no puedan enviar mensajes
+        if(username in self.deadMembers):
+            print("Mensaje no enviado porque este usuario esta muerto")
+        else:
+            for member in self.allMembers:
+                if member != username:
+                    self.clients[member].send(bytes(username + ": " + message,"utf-8"))
 
 def pyconChat(client, username, roomname):
     while True:
@@ -250,6 +373,27 @@ def pyconChat(client, username, roomname):
             else:
                 client.send(b"You're not an admin.")
         
+        elif msg =="/vote":
+            client.send(b"/requestVote")
+            client.recv(1024).decode("utf-8")
+            print(groups[roomname].deadMembers)
+            print(username)
+            ##para restringir votaciones a cuando el juego ya inicio
+            if(groups[roomname].start==True):
+                if username in groups[roomname].deadMembers:
+                    print("Voto bloqueado porque ese usuario esta muerto")
+                
+                else:
+                    # print("Este usuario le pidio al servidor votar: "+ username)
+                    client.send(b"/nowVote")
+                    usernameToKill = client.recv(1024).decode("utf-8")
+                    print("Y le pidio que matara a "+usernameToKill)
+                    groups[roomname].addVote(username,usernameToKill)
+                    client.send(b"Vote submitted")
+            else:
+                print("Voto bloqueado porque no ha iniciado el juego")
+                client.send(b"No es momento de votar")
+
         elif msg == "/approveRequest":
             client.send(b"/approveRequest")
             client.recv(1024).decode("utf-8")
@@ -305,15 +449,11 @@ def pyconChat(client, username, roomname):
             client.send(pickle.dumps(groups[roomname].allMembers))
         
         elif msg == "/startGame":
-            ##client.send(b"/startGame")
-            print("CLIENT REQUESTED TO START THE GAME")
-            ##revisar si hay minimo cupo
-        
             numberOfPlayers =len(groups[roomname].allMembers)
-            print("El numero de jugadores en la sala es: {}".format(numberOfPlayers))
+            print("\nEl numero de jugadores en la sala es: {}".format(numberOfPlayers))
         
             if(numberOfPlayers >= 2):
-                groups[roomname].asignRoles()
+                groups[roomname].startGame()
                 client.send(b"/startGame")
                 message = client.recv(1024).decode("utf-8")
         
@@ -329,10 +469,6 @@ def pyconChat(client, username, roomname):
         else:
             print("UNIDENTIFIED COMMAND:",msg)
             
-
-
-
-
 def handshake(client):
     username = client.recv(1024).decode("utf-8")
     client.send(b"/sendroomname")
@@ -348,7 +484,7 @@ def handshake(client):
         else:
             groups[roomname].joinRequests.add(username)
             groups[roomname].waitClients[username] = client
-            groups[roomname].sendMessage(username+" has requested to join the group.","PyconChat")
+            groups[roomname].sendMessage("\n"+ username +" has requested to join the group.","PyconChat")
             client.send(b"/wait")
     
             print("Join Request:",username,"| Group:",roomname)
@@ -360,11 +496,11 @@ def handshake(client):
         threading.Thread(target=pyconChat, args=(client, username, roomname,)).start()
         client.send(b"/adminReady")
     
-        print("New Group:",roomname,"| Admin:",username)
+        print("\n***New Group:",roomname,"| Admin:",username, "***\n")
 
 def main():
     if len(sys.argv) < 3:
-        print("USAGE: python server.py <IP> <Port>")
+        print("\nUSAGE: python server.py <IP> <Port>")
         print("EXAMPLE: python server.py localhost 8000")
         return
     
@@ -372,7 +508,7 @@ def main():
     listenSocket.bind((sys.argv[1], int(sys.argv[2])))
     listenSocket.listen(10)
     
-    print("PyconChat Server running")
+    print("\nPyconChat Server running")
     
     while True:
         client,_ = listenSocket.accept()
