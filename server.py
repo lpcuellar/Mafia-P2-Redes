@@ -66,7 +66,7 @@ class Group:
         self.allMembers = set()
         self.allMembers.add(admin)
         self.onlineMembers= set()
-        self.deadMembers = ["cl1"]
+        self.deadMembers = []
 
         self.offlineMessages = {}
 
@@ -87,13 +87,25 @@ class Group:
         self.civilCount =0
         self.detectiveCount=0
         self.timeLeft=90
-        self.votes=[]
+        self.votes=[{'user':'cl2','vote':'cl1'},{'user':'cl3','vote':'cl1'},{'user':'cl1','vote':'cl2'}]
         self.votesAgainst=[]
         self.start = False
 
     def send_broadcast(self, message):
         for member in self.allMembers:
             self.clients[member].send(bytes(message,"utf-8"))
+    
+    #borra todos los votos almacenados
+    def clearVotes(self):
+        print("VOTES ANTES:")
+        print(self.votes)
+        
+        for j in range(0, len(self.votes))  :
+            self.votes.remove(self.votes[0])
+
+        print("VOTES DESPUES:")
+        print(self.votes)
+
 
 
     ##Revisa si ese usuario ya habia votado y si si, lo remplaza.
@@ -110,7 +122,7 @@ class Group:
                     print("Encontre un voto de "+ test)
                     self.votes.remove(vote)
                     self.votes.append(newvote)
-                    replacement=True	        	        
+                    replacement=True                        
             if(replacement==False):
                 self.votes.append(newvote)
 
@@ -118,8 +130,42 @@ class Group:
             self.votes.append(newvote)
         print(self.votes)
 
+    ## Una vez hecha la votacion, se hace un recuento de los votos de todos los usuarios vivos
+
     def countVotes(self):
-        pass
+        for user in self.allMembers:
+            self.votesAgainst.append({'user':user,'votes':0})
+
+        print(self.votesAgainst)
+
+        for user in self.allMembers:
+            for vote in self.votes:
+                if vote['vote'] == user:
+                    print("Encontre un voto en contra de " + user)
+                    for x in self.votesAgainst:
+                        if(x['user']==user):
+                            res=x['votes']
+                            x['votes']=res+1
+
+        print(self.votesAgainst)
+
+
+        localmax=0
+        deaduser=""
+        for element in self.votesAgainst:
+            if(element['votes']>localmax):
+                localmax=element['votes']
+                deaduser=element['user']
+        print("El maximo de votos es de" +str(localmax))
+        print("El votado preliminarmente es :"+ deaduser)
+        for element in self.votesAgainst:
+            if(element['votes']==localmax and element['user']!=deaduser):
+                print("Hay un empate. nadie muere")
+                localmax=0
+                deaduser=""
+
+        print("El maximo de votos es de " +str(localmax))
+        print("El votado preliminarmente es :"+ deaduser)                   
 
 
 
@@ -136,6 +182,8 @@ class Group:
             time.sleep(1)
             t -= 1
    
+
+   ##Busca la lista de usuasrios conectados y les asigna un rol aleatoriamente
     def asignRoles(self):
         print("\nASSIGNING ROLES FOR THE PLAYERS")
 
@@ -334,6 +382,7 @@ class Group:
         self.isFirstDay = True
         self.daytime = 0
         self.narrator()
+        self.clearVotes()
 
     def disconnect(self,username):
         self.onlineMembers.remove(username)
@@ -350,6 +399,7 @@ class Group:
             
     def sendMessage(self,message,username):
         #para que los juagadore muertos no puedan enviar mensajes
+        print("RECIBI ESTE MENSAJE :"+ message + " DE : "+ username + " ... RETRASNMITIENDO...")
         if(username in self.deadMembers):
             print("Mensaje no enviado porque este usuario esta muerto")
         else:
@@ -357,6 +407,8 @@ class Group:
                 if member != username:
                     self.clients[member].send(bytes(username + ": " + message,"utf-8"))
 
+
+##MAnejo de recepcion de mensjaes co nocodigos especificos  del lado del servidor
 def pyconChat(client, username, roomname):
     while True:
         msg = client.recv(1024).decode("utf-8")
@@ -454,12 +506,13 @@ def pyconChat(client, username, roomname):
         
             if(numberOfPlayers >= 2):
                 groups[roomname].startGame()
+                #groups[roomname].countVotes()
                 client.send(b"/startGame")
-                message = client.recv(1024).decode("utf-8")
+                #message = client.recv(1024).decode("utf-8")
         
             else:
                 client.send(b"/insufficientPlayers")
-                message = client.recv(1024).decode("utf-8")
+                #message = client.recv(1024).decode("utf-8")
         
             client.recv(1024).decode("utf-8")
 

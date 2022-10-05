@@ -104,12 +104,12 @@ def serverListen(serverSocket):
                 print(element)
         elif msg == "/startGame":
             print("EL SERVIDOR DICE QUE INICIE EL JUEGO")
-            serverSocket.send(bytes(state["userInput"],"utf-8"))
-            state["sendMessageLock"].release()
+            #serverSocket.send(bytes(state["userInput"],"utf-8"))
+            #state["sendMessageLock"].release()
             # response = serverSocket.recv(1024).decode("utf-8")
         elif msg == "/insufficientPlayers":
             print("EL SERVIDOR DICE QUE NO HAY SUFICIENTES JUGADORES CONNECTADOS")
-            state["sendMessageLock"].release()
+            #state["sendMessageLock"].release()
             #response = serverSocket.recv(1024).decode("utf-8")
 
         else:
@@ -133,10 +133,10 @@ def userInput(serverSocket):
         elif state["userInput"] == "/4":
             serverSocket.send(b"/onlineMembers")
         elif state["userInput"] == "/5":
-            state["sendMessageLock"].acquire()
+            #state["sendMessageLock"].acquire()
             serverSocket.send(b"/startGame")
         elif state["userInput"] == "/vote":
-            #state["sendMessageLock"].acquire()
+            state["sendMessageLock"].acquire()
             serverSocket.send(b"/vote")
         elif state["inputMessage"]:
             state["sendMessageLock"].acquire()
@@ -253,4 +253,4 @@ def main():
             break
 
 if __name__ == "__main__":
-	main()
+    main()
