@@ -411,7 +411,7 @@ class Group:
     def gameplay(self):
 
         while self.mafiaLeft>0:
-            if( state == 0):
+            if( self.state == 0):
                 clearVotes()
                 printState()
                 while (len(self.votes)< self.mafiaLeft):
@@ -430,7 +430,7 @@ class Group:
             #     state=2
 
 
-            elif (state == 2):
+            elif (self.state == 2):
                 clearVotes()
                 printState()
                 while (len(votes)< self.mafiaLeft+self.civiliansLeft+self.detectivesLeft):
@@ -452,9 +452,9 @@ class Group:
         self.start=True
         self.asignRoles()
 
-        mafiaLeft = self.mafiaCount
-        civiliansLeft = self.civilCount
-        detectivesLeft = self.detectiveCount
+        self.mafiaLeft = self.mafiaCount
+        self.civiliansLeft = self.civilCount
+        self.detectivesLeft = self.detectiveCount
         
         self.isFirstDay = True
         self.daytime = 0
