@@ -82,7 +82,7 @@ class Group:
         #   3) noche roles especiales
 
         self.daytime= 1
-
+        self.state=0
         self.mafiaCount =0
         self.civilCount =0
         self.detectiveCount=0
@@ -395,33 +395,33 @@ class Group:
 
     # Registra en el servidor el estaod en el que estan.
 
-    def printState():
-        print("MAFIOSOS LEFT: " + str(mafiaCount))
-        print ("DEtectives LEFT:"+ str(detectiveCount))
-        print("Cviviles Left :"+str(civiliansLeft))
-        if(state == 0):
+    def printState(self):
+        print("MAFIOSOS LEFT: " + str(self.mafiaLeft))
+        print ("DEtectives LEFT:"+ str(self.detectivesLeft))
+        print("Cviviles Left :"+str(self.civiliansLeft))
+        if(self.state == 0):
             print("ES DE NOCHE. LE TOCA VOTAR A LOS MAFIOSOS ")
-        elif (state==1):
+        elif (self.state==1):
             print("ES DE NOCHE. LE TOCA ACTUAR AL DETECTIVE")
-        elif (state ==2):
+        elif (self.state ==2):
             print("ES DE DIA . LE TOCA VOTAR A LOS CIVILES")
-        print   ("VOTOS REALIZADOS: "+ str  (len(votes)))
+        print   ("VOTOS REALIZADOS: "+ str  (len(self.votes)))
 
 
     def gameplay(self):
 
         while self.mafiaLeft>0:
             if( self.state == 0):
-                clearVotes()
-                printState()
+                self.clearVotes()
+                self.printState()
                 while (len(self.votes)< self.mafiaLeft):
                     print("AUN FLATAN VOTOS")
                     
                 
-                printState()
-                countVotes()
-                printState()
-                state=2
+                self.printState()
+                self.countVotes()
+                self.printState()
+                self.state=2
     
             # elif( state == 1):
             #     printState()
@@ -431,19 +431,19 @@ class Group:
 
 
             elif (self.state == 2):
-                clearVotes()
-                printState()
+                self.clearVotes()
+                self.printState()
                 while (len(votes)< self.mafiaLeft+self.civiliansLeft+self.detectivesLeft):
                     print("Faltan votos")
             
-                printState()
-                countVotes()
-                printState()
-                state=0
+                self.printState()
+                self.countVotes()
+                self.printState()
+                self.state=0
 
 
 
-        printState()
+        self.printState()
 
 
 
