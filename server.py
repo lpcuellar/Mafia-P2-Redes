@@ -130,6 +130,23 @@ class Group:
             self.votes.append(newvote)
         print(self.votes)
 
+
+    ## metodo usado para restar de la partida a un usuario
+    def killUser(self,username):
+        for role in self.rolesJugadores:
+            if(role['user']==username):
+                if(role['role']==1):
+                    self.civiliansLeft-=1
+                    self.deadMembers.append(username)
+                elif(role['role']==2):
+                    self.mafiaLeft-=1
+                    self.deadMembers.append(username)
+                elif(role['role']==3):
+                    self.detectivesLeft-=1
+                    self.deadMembers.append(username)
+
+
+
     ## Una vez hecha la votacion, se hace un recuento de los votos de todos los usuarios vivos
 
     def countVotes(self):
@@ -165,7 +182,12 @@ class Group:
                 deaduser=""
 
         print("El maximo de votos es de " +str(localmax))
-        print("El votado preliminarmente es :"+ deaduser)                   
+        print("El votado preliminarmente es :"+ deaduser)
+        if(deaduser==""):
+            pass
+        else:
+            killUser(deaduser)
+
 
 
 
@@ -370,6 +392,61 @@ class Group:
         else:
             print("UNKNOWN DAY STATE")
 
+
+    # Registra en el servidor el estaod en el que estan.
+
+    def printState():
+        print("MAFIOSOS LEFT: " + str(mafiaCount))
+        print ("DEtectives LEFT:"+ str(detectiveCount))
+        print("Cviviles Left :"+str(civiliansLeft))
+        if(state == 0):
+            print("ES DE NOCHE. LE TOCA VOTAR A LOS MAFIOSOS ")
+        elif (state==1):
+            print("ES DE NOCHE. LE TOCA ACTUAR AL DETECTIVE")
+        elif (state ==2):
+            print("ES DE DIA . LE TOCA VOTAR A LOS CIVILES")
+        print   ("VOTOS REALIZADOS: "+ str  (len(votes)))
+
+
+    def gameplay(self):
+
+        while self.mafiaLeft>0:
+            if( state == 0):
+                clearVotes()
+                printState()
+                while (len(self.votes)< self.mafiaLeft):
+                    print("AUN FLATAN VOTOS")
+                    
+                
+                printState()
+                countVotes()
+                printState()
+                state=2
+    
+            # elif( state == 1):
+            #     printState()
+            #     x = input("Presione x para ver una carta civil")
+            #     if (x== "x"):
+            #     state=2
+
+
+            elif (state == 2):
+                clearVotes()
+                printState()
+                while (len(votes)< self.mafiaLeft+self.civiliansLeft+self.detectivesLeft):
+                    print("Faltan votos")
+            
+                printState()
+                countVotes()
+                printState()
+                state=0
+
+
+
+        printState()
+
+
+
     def startGame(self):
         print("\nCLIENT REQUESTED TO START THE GAME")
         self.start=True
@@ -383,6 +460,7 @@ class Group:
         self.daytime = 0
         self.narrator()
         self.clearVotes()
+        self.gameplay()
 
     def disconnect(self,username):
         self.onlineMembers.remove(username)
